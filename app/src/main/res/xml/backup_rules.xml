@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Exclude private local ledger database and chart screenshots from unencrypted cloud backup -->
+    <exclude domain="database" path="." />
+    <exclude domain="file" path="trade_screenshots" />
+</full-backup-content>

@@ -1,0 +1,6 @@
+{
+  "name": "TradeJournal India",
+  "description": "Professional trading journal for NSE, BSE and MCX retail traders",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
