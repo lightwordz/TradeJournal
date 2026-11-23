@@ -15,11 +15,8 @@
       color: #0F172A;
       background: #F8FAFC;
     }
-    @media (prefers-color-scheme: dark) {
-      body { color: #F8FAFC; background: #0B0E14; }
-      .card { background: #131822; border-color: rgba(255,255,255,0.12); }
-    }
     .card {
+      color: #0F172A;
       background: #FFFFFF;
       border: 1px solid #E2E8F0;
       border-radius: 14px;
@@ -28,7 +25,14 @@
     }
     h1 { margin-bottom: 4px; font-size: 1.75rem; }
     h2 { font-size: 1.1rem; margin-top: 20px; }
-    .muted { color: #64748B; font-size: 0.92rem; }
+    .muted { color: #475569; font-size: 0.92rem; }
+    a { color: #1D4ED8; }
+    @media (prefers-color-scheme: dark) {
+      body { color: #F8FAFC; background: #0B0E14; }
+      .card { color: #F8FAFC; background: #131822; border-color: rgba(255,255,255,0.14); }
+      .muted { color: #94A3B8; }
+      a { color: #60A5FA; }
+    }
   </style>
 </head>
 <body>
