@@ -40,6 +40,7 @@ Record-keeping tool. Not investment advice. Not SEBI-registered. Calculations ar
 ## 2. Privacy & Account Deletion URLs (Host `/docs` via GitHub Pages)
 
 In GitHub **Settings → Pages → Source: Deploy from a branch** → choose **`main`** branch and **`/docs`** folder (zero GitHub Actions required). Once live, replace `<username>` and `<repo>`:
+- **Website / Support URL:** `https://<username>.github.io/<repo>/`
 - **Privacy Policy URL:** `https://<username>.github.io/<repo>/privacy-policy.html`
 - **Account / Data Deletion URL:** `https://<username>.github.io/<repo>/delete-account.html`
 
