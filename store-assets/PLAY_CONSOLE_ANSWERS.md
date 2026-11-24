@@ -50,7 +50,7 @@ In GitHub **Settings → Pages → Source: Deploy from a branch** → choose **`
 
 ### App Access (For Play Reviewers)
 ```text
-No sign-in, account, OTP, or test credentials are required. On first launch, review the Record-Keeping Disclaimer screen, check the confirmation box, tap "I Understand & Continue", enter any display name, pick any fee preset and capital amount, and tap "Open My Journal" to access all features offline.
+No sign-in, account, OTP, or test credentials are required. On first launch, enter any display name (or tap Skip), pick any fee preset and capital amount, and tap "Open My Journal" to access all features offline. Full non-advisory disclosures and Privacy/Terms are available in Onboarding footer links and Profile/Settings.
 ```
 
 ### Ads Declaration
@@ -86,14 +86,14 @@ Initial release of TradeJournal: offline trade logging for Indian equity, F&O, a
 
 ## 5. Screenshot Captions (`1080 × 1920`, Capture from Live Device/Emulator)
 
-1. `01_Disclaimer.png` — `Personal record-keeping diary with clear disclosures`
-2. `02_Dashboard.png` — `Track logged P&L after estimated brokerage & taxes`
-3. `03_LogTrade.png` — `Record NSE, BSE & MCX trades offline`
-4. `04_FeeBreakdown.png` — `Review brokerage & statutory charge estimates`
-5. `05_Calendar.png` — `Inspect monthly sessions on your calendar`
-6. `06_Analytics.png` — `View equity curves & historical weekday stats`
-7. `07_CsvTools.png` — `Read-only CSV import & instant local CSV export`
-8. `08_SettingsPrivacy.png` — `100% offline storage & one-tap local data wipe`
+1. `01_Dashboard.png` — `Track logged P&L after estimated brokerage & taxes`
+2. `02_LogTrade.png` — `Record NSE, BSE & MCX trades offline`
+3. `03_FeeBreakdown.png` — `Review brokerage & statutory charge estimates`
+4. `04_Calendar.png` — `Inspect monthly sessions on your calendar`
+5. `05_Analytics.png` — `View equity curves & historical weekday stats`
+6. `06_CsvTools.png` — `Read-only CSV import & instant local CSV export`
+7. `07_Onboarding.png` — `Fast offline setup — name & broker fee preset`
+8. `08_SettingsPrivacy.png` — `Offline privacy, non-advisory notice & CSV wipe`
 
 ---
 

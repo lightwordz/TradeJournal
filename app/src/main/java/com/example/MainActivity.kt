@@ -10,6 +10,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -36,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.RoomTradeRepository
+import com.example.data.StartupBootCache
 import com.example.db.AppDatabase
 import com.example.model.Trade
 import com.example.screens.*
@@ -59,14 +62,19 @@ import kotlinx.coroutines.withContext
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
-        )
+        val initialFastPrefs = StartupBootCache.readInitialPreferences(applicationContext)
+        val initialStyle = if (initialFastPrefs?.isDarkTheme == true) {
+            SystemBarStyle.dark(Color.TRANSPARENT)
+        } else {
+            SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        }
+        enableEdgeToEdge(statusBarStyle = initialStyle, navigationBarStyle = initialStyle)
         val repository = RoomTradeRepository(AppDatabase.getInstance(applicationContext))
 
         setContent {
-            val viewModel: MainViewModel = viewModel(factory = MainViewModel.Factory(repository))
+            val viewModel: MainViewModel = viewModel(
+                factory = MainViewModel.Factory(repository, initialFastPrefs)
+            )
             val preferencesState by viewModel.preferencesState.collectAsStateWithLifecycle()
             val trades by viewModel.trades.collectAsStateWithLifecycle()
             val capitalEntries by viewModel.capitalEntries.collectAsStateWithLifecycle()
@@ -74,6 +82,12 @@ class MainActivity : ComponentActivity() {
             val brokerProfile by viewModel.brokerProfile.collectAsStateWithLifecycle()
 
             val preferences = preferencesState
+
+            LaunchedEffect(preferences) {
+                if (preferences != null) {
+                    StartupBootCache.sync(applicationContext, preferences)
+                }
+            }
 
             SideEffect {
                 val isDark = preferences?.isDarkTheme == true
@@ -145,8 +159,18 @@ class MainActivity : ComponentActivity() {
             }
 
             MyApplicationTheme(darkTheme = preferences?.isDarkTheme == true) {
-                when {
-                    preferences == null -> {
+                val rootMode = when {
+                    preferences == null -> 0
+                    !preferences.hasCompletedOnboarding -> 1
+                    else -> 2
+                }
+                Crossfade(
+                    targetState = rootMode,
+                    animationSpec = tween(durationMillis = 180),
+                    label = "root_launch_transition"
+                ) { mode ->
+                when (mode) {
+                    0 -> {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -154,7 +178,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    !preferences.hasCompletedOnboarding -> {
+                    1 -> {
                         OnboardingScreen(
                             onComplete = { name, broker, capital ->
                                 viewModel.completeOnboarding(name, broker, capital)
@@ -163,6 +187,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     else -> {
+                        val activePreferences = preferences ?: return@Crossfade
                         BackHandler(
                             enabled = currentRoute != Screen.Dashboard.route &&
                                 !showAddSheet &&
@@ -184,10 +209,10 @@ class MainActivity : ComponentActivity() {
                                 Screen.Dashboard.route -> DashboardScreen(
                                     trades = trades,
                                     brokerProfile = brokerProfile,
-                                    matchingMethod = preferences.matchingMethod,
-                                    traderName = preferences.traderName,
+                                    matchingMethod = activePreferences.matchingMethod,
+                                    traderName = activePreferences.traderName,
                                     effectiveCapital = effectiveCapital,
-                                    dailyLossLimit = preferences.dailyLossLimit,
+                                    dailyLossLimit = activePreferences.dailyLossLimit,
                                     onViewAllClick = { currentRoute = Screen.Journal.route },
                                     onAddTradeClick = openLogTradeSheet,
                                     onTradeClick = { selectedTrade = it }
@@ -195,18 +220,18 @@ class MainActivity : ComponentActivity() {
                                 Screen.Analytics.route -> AnalyticsScreen(
                                     trades = trades,
                                     brokerProfile = brokerProfile,
-                                    matchingMethod = preferences.matchingMethod
+                                    matchingMethod = activePreferences.matchingMethod
                                 )
                                 Screen.Calendar.route -> CalendarScreen(
                                     trades = trades,
                                     brokerProfile = brokerProfile,
-                                    matchingMethod = preferences.matchingMethod,
+                                    matchingMethod = activePreferences.matchingMethod,
                                     onTradeClick = { selectedTrade = it }
                                 )
                                 Screen.Journal.route -> JournalScreen(
                                     trades = trades,
                                     brokerProfile = brokerProfile,
-                                    matchingMethod = preferences.matchingMethod,
+                                    matchingMethod = activePreferences.matchingMethod,
                                     onTradeClick = { selectedTrade = it },
                                     onAddTradeClick = openLogTradeSheet,
                                     onImportCsvClick = { showImportSheet = true },
@@ -217,7 +242,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                                 Screen.Profile.route -> ProfileScreen(
-                                    preferences = preferences,
+                                    preferences = activePreferences,
                                     effectiveCapital = effectiveCapital,
                                     capitalEntries = capitalEntries,
                                     tradesCount = trades.size,
@@ -319,24 +344,24 @@ class MainActivity : ComponentActivity() {
                                         timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
                                     }.format(java.util.Date())
                                 }
-                                val todayGuardrail = remember(trades, brokerProfile, preferences.matchingMethod, preferences.dailyLossLimit, todayIso) {
+                                val todayGuardrail = remember(trades, brokerProfile, activePreferences.matchingMethod, activePreferences.dailyLossLimit, todayIso) {
                                     val todayResults = trades
                                         .filter { it.date == todayIso }
                                         .reversed()
-                                        .map { com.example.engine.CalculationEngine.calculateTradeResult(it, brokerProfile, preferences.matchingMethod) }
-                                    com.example.engine.CalculationEngine.evaluateDailyRiskGuardrail(todayResults, preferences.dailyLossLimit)
+                                        .map { com.example.engine.CalculationEngine.calculateTradeResult(it, brokerProfile, activePreferences.matchingMethod) }
+                                    com.example.engine.CalculationEngine.evaluateDailyRiskGuardrail(todayResults, activePreferences.dailyLossLimit)
                                 }
                                 AddTradeSheet(
                                     initialTrade = editingTrade,
                                     initialScreenshotDraft = scannedDraft,
-                                    brokerId = preferences.defaultBroker,
+                                    brokerId = activePreferences.defaultBroker,
                                     brokerProfile = brokerProfile,
-                                    matchingMethod = preferences.matchingMethod,
-                                    lotSizes = preferences.lotSizes,
+                                    matchingMethod = activePreferences.matchingMethod,
+                                    lotSizes = activePreferences.lotSizes,
                                     effectiveCapital = effectiveCapital,
                                     todayGuardrail = todayGuardrail,
                                     onSaveCustomTicker = { ticker, lotSize ->
-                                        val updated = preferences.lotSizes.toMutableMap()
+                                        val updated = activePreferences.lotSizes.toMutableMap()
                                         updated[ticker] = lotSize
                                         viewModel.updateLotSizes(updated)
                                     },
@@ -361,7 +386,7 @@ class MainActivity : ComponentActivity() {
                                 TradeDetailSheet(
                                     trade = trade,
                                     brokerProfile = brokerProfile,
-                                    matchingMethod = preferences.matchingMethod,
+                                    matchingMethod = activePreferences.matchingMethod,
                                     onDismiss = { selectedTrade = null },
                                     onEdit = { toEdit ->
                                         editingTrade = toEdit
@@ -373,6 +398,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
+                }
                 }
             }
         }

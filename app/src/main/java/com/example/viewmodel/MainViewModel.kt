@@ -18,7 +18,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
-class MainViewModel(private val repository: TradeDataRepository) : ViewModel() {
+class MainViewModel(
+    private val repository: TradeDataRepository,
+    initialPreferences: TraderPreferences? = null
+) : ViewModel() {
 
     val trades: StateFlow<List<Trade>> = repository.trades
         .stateIn(
@@ -27,20 +30,20 @@ class MainViewModel(private val repository: TradeDataRepository) : ViewModel() {
             initialValue = emptyList()
         )
 
-    // Nullable initial value eliminates first-frame onboarding flash before SQLite emits
+    // Uses fast-boot cache when available so frame #1 renders immediately without waiting on SQLite
     val preferencesState: StateFlow<TraderPreferences?> = repository.preferences
         .map<TraderPreferences, TraderPreferences?> { it }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = null
+            initialValue = initialPreferences
         )
 
     val preferences: StateFlow<TraderPreferences> = repository.preferences
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = TraderPreferences()
+            initialValue = initialPreferences ?: TraderPreferences()
         )
 
     val capitalEntries: StateFlow<List<CapitalEntry>> = repository.capitalEntries
@@ -65,7 +68,7 @@ class MainViewModel(private val repository: TradeDataRepository) : ViewModel() {
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = BrokerRateProfile.forBroker("Zerodha")
+            initialValue = (initialPreferences ?: TraderPreferences()).activeRateProfile
         )
 
     init {
@@ -138,10 +141,13 @@ class MainViewModel(private val repository: TradeDataRepository) : ViewModel() {
         viewModelScope.launch { repository.updateLotSizes(lotSizes) }
     }
 
-    class Factory(private val repository: TradeDataRepository) : ViewModelProvider.Factory {
+    class Factory(
+        private val repository: TradeDataRepository,
+        private val initialPreferences: TraderPreferences? = null
+    ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return MainViewModel(repository) as T
+            return MainViewModel(repository, initialPreferences) as T
         }
     }
 }
